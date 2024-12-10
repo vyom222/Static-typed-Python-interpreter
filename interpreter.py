@@ -1,13 +1,16 @@
 # Token Types
 # EOF - End of File token
 from dbm import error
+from unittest import removeResult
 
 INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
 
 
 class Token(object):
     def __init__(self, token_type, value):
+        # token type: INTEGER, PLUS, MINUS, or EOF
         self.type = token_type
+        # token value: non-negative integer value, '+', '-', or None
         self.value = value
 
     def __str__(self):
@@ -19,11 +22,15 @@ class Token(object):
 
 class Interpreter(object):
     def __init__(self, text):
+        # client string input
         self.text = text
+        # index into self.text
         self.pos = 0
+        # current token instance
         self.current_token = None
         self.current_char = self.text[self.pos]
 
+    # Lexer code
     def error(self):
         raise Exception('Error parsing input')
 
@@ -61,32 +68,38 @@ class Interpreter(object):
             self.error()
         return Token(EOF, None)
 
+    # Interpreter code
     def eat(self, token_type):
         if self.current_token.type == token_type:
             self.current_token = self.get_next_token()
         else:
             self.error()
 
+    def term(self):
+        # return an INTEGER token value
+        token = self.current_token
+        if token.type == PLUS:
+            self.eat(PLUS)
+            return self.term()
+        if token.type == MINUS:
+            self.eat(MINUS)
+            return -self.term()
+        self.eat(INTEGER)
+        return token.value
+
     def expr(self):
+        # set current token to the first token taken from the input
         self.current_token = self.get_next_token()
-        left = self.current_token
-        self.eat(INTEGER)
-        op = self.current_token
-        match op.type:
-            case "PLUS":
-                self.eat(PLUS)
-            case "MINUS":
-                self.eat(MINUS)
-        right = self.current_token
-        self.eat(INTEGER)
-        match op.type:
-            case "PLUS":
-                result = left.value + right.value
-            case "MINUS":
-                result = left.value - right.value
-            case _:
-                result = 0
-                self.error()
+        result = self.term()
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            match token.type:
+                case "PLUS":
+                    self.eat(PLUS)
+                    result += self.term()
+                case "MINUS":
+                    self.eat(MINUS)
+                    result -= self.term()
         return result
 
 
