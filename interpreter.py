@@ -1,8 +1,5 @@
 # Token Types
 # EOF - End of File token
-from dbm import error
-from unittest import removeResult
-
 INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
 
 
