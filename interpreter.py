@@ -1,13 +1,14 @@
 # Token Types
 # EOF - End of File token
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, MUL, DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, EOF = (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP', 'EOF')
 
 
 class Token(object):
     def __init__(self, token_type, value):
         # token type: INTEGER, PLUS, MINUS, or EOF
         self.type = token_type
-        # token value: non-negative integer value, '+', '-', or None
+        # token value: non-negative integer value, or operates, or None
         self.value = value
 
     def __str__(self):
@@ -17,19 +18,14 @@ class Token(object):
         return self.__str__()
 
 
-class Interpreter(object):
+class Lexer(object):
     def __init__(self, text):
-        # client string input
         self.text = text
-        # index into self.text
         self.pos = 0
-        # current token instance
-        self.current_token = None
         self.current_char = self.text[self.pos]
 
-    # Lexer code
     def error(self):
-        raise Exception('Error parsing input')
+        raise Exception('Invalid character')
 
     def advance(self):
         self.pos += 1
@@ -49,6 +45,26 @@ class Interpreter(object):
             self.advance()
         return int(result)
 
+    def mul_or_exp(self):
+        self.advance()
+        if self.current_char == '*':
+            self.advance()
+            if self.current_char == '*':
+                self.error()
+                return Token(EOF, None)
+            return Token(EXP, '**')
+        return Token(MUL, '*')
+
+    def div_or_int_div(self):
+        self.advance()
+        if self.current_char == '/':
+            self.advance()
+            if self.current_char == '/':
+                self.error()
+                return Token(EOF, None)
+            return Token(INT_DIV, '//')
+        return Token(DIV, '/')
+
     def get_next_token(self):
         while self.current_char is not None:
             if self.current_char.isspace():
@@ -62,35 +78,97 @@ class Interpreter(object):
             if self.current_char == '-':
                 self.advance()
                 return Token(MINUS, '-')
+            if self.current_char == '*':
+                return self.mul_or_exp()
+            if self.current_char == '/':
+                return self.div_or_int_div()
+            if self.current_char == '~':
+                self.advance()
+                return Token(BIT_NOT, '~')
+            if self.current_char == '^':
+                self.advance()
+                return Token(BIT_XOR, '^')
+            if self.current_char == '&':
+                self.advance()
+                return Token(BIT_AND, '&')
+            if self.current_char == '|':
+                self.advance()
+                return Token(BIT_OR, '|')
+            if self.current_char == '%':
+                self.advance()
+                return Token(MOD, '%')
             self.error()
         return Token(EOF, None)
 
-    # Interpreter code
+
+class Interpreter(object):
+    def __init__(self, lexer):
+        self.lexer = lexer
+        # client string input
+        # index into self.text
+        # current token instance
+        self.current_token = self.lexer.get_next_token()
+
+    def error(self):
+        raise Exception('Invalid syntax')
+
     def eat(self, token_type):
         # compare the current token type with the passed token
         # type and if they match then "eat" the current token
         # and assign the next token to the self.current_token,
         # otherwise raise an exception.
         if self.current_token.type == token_type:
-            self.current_token = self.get_next_token()
+            self.current_token = self.lexer.get_next_token()
         else:
             self.error()
 
-    def term(self):
-        # return an INTEGER token value
+    @staticmethod
+    def sgn(x):
+        return (x > 0) - (x < 0)
+
+    def factor(self):
         token = self.current_token
-        if token.type == PLUS:
-            self.eat(PLUS)
-            return self.term()
-        if token.type == MINUS:
-            self.eat(MINUS)
-            return -self.term()
+        match token.type:
+            case "PLUS":
+                self.eat(PLUS)
+                return self.factor()
+            case "MINUS":
+                self.eat(MINUS)
+                return -self.factor()
+            case "BIT_NOT":
+                self.eat(BIT_NOT)
+                return ~self.factor()
         self.eat(INTEGER)
         return token.value
 
+    def exp(self):
+        result = self.factor()
+        while self.current_token.type == EXP:
+            self.eat(EXP)
+            result = self.sgn(result) * abs(result) ** self.factor()
+        return result
+
+    def term(self):
+        # return an INTEGER token value
+        result = self.exp()
+        while self.current_token.type in (MUL, DIV, MOD, INT_DIV):
+            token = self.current_token
+            match token.type:
+                case "MUL":
+                    self.eat(MUL)
+                    result *= self.term()
+                case "DIV":
+                    self.eat(DIV)
+                    result /= self.term()
+                case "MOD":
+                    self.eat(MOD)
+                    result %= self.term()
+                case "INT_DIV":
+                    self.eat(INT_DIV)
+                    result //= self.term()
+        return result
+
     def expr(self):
-        # set current token to the first token taken from the input
-        self.current_token = self.get_next_token()
         result = self.term()
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
@@ -112,7 +190,7 @@ def main():
             break
         if not text:
             continue
-        interpreter = Interpreter(text)
+        interpreter = Interpreter(Lexer(text))
         result = interpreter.expr()
         print(result)
 
