@@ -1,7 +1,11 @@
 # Token Types
 # EOF - End of File token
-INTEGER, PLUS, MINUS, MUL, DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, EOF = (
-    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP', 'EOF')
+(INTEGER, PLUS, MINUS, MUL, DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT,
+ GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, EQUALS, NOT_EQUALS_TO, IS, IS_NOT, IN, NOT_IN, NOT,
+ AND, OR, EOF) = (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
+    'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
+    'EQUALS', 'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'IN_NOT', 'NOT', 'AND', 'OR', 'EOF')
 
 
 class Token(object):
@@ -45,13 +49,80 @@ class Lexer(object):
             self.advance()
         return int(result)
 
+    def logical_operator(self):
+        result = ''
+        while self.current_char is not None and self.current_char.isalpha():
+            result += self.current_char
+            self.advance()
+        return result
+
+    def logical_or_identity_or_membership(self):
+        result = self.logical_operator()
+        if result in ('is', 'not') and self.current_char == ' ':
+            self.advance()
+            result += ' '
+            result += self.logical_operator()
+        match result:
+            case 'is':
+                return Token(IS, 'is')
+            case 'is not':
+                return Token(IS_NOT, 'is not')
+            case 'in':
+                return Token(IN, 'in')
+            case 'not in':
+                return Token(NOT_IN, 'not in')
+            case 'and':
+                return Token(AND, 'and')
+            case 'or':
+                return Token(OR, 'or')
+            case 'not':
+                return Token(NOT, 'not')
+        self.error()
+
+    def comparison_or_shift(self, character):
+        self.advance()
+        match character:
+            case '<':
+                match self.current_char:
+                    case '<':
+                        self.advance()
+                        return Token(BIT_LEFT_SHIFT, '<<')
+                    case '=':
+                        self.advance()
+                        return Token(SMALLER_OR_EQUALS, '<=')
+                return Token(SMALLER, '<')
+            case '>':
+                match self.current_char:
+                    case '>':
+                        self.advance()
+                        return Token(BIT_RIGHT_SHIFT, '>>')
+                    case '=':
+                        self.advance()
+                        return Token(GREATER_OR_EQUALS, '>=')
+                return Token(GREATER, '>')
+            case '=':
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(EQUALS_TO, '==')
+                return Token(EQUALS, '=')
+            case '!':
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(NOT_EQUALS_TO, '!=')
+                self.error()
+        self.error()
+
+        if self.current_char == character:
+            self.advance()
+            return Token(BIT_XOR, character * 2)
+        return Token(BIT_XOR, character)
+
     def mul_or_exp(self):
         self.advance()
         if self.current_char == '*':
             self.advance()
-            if self.current_char == '*':
-                self.error()
-                return Token(EOF, None)
             return Token(EXP, '**')
         return Token(MUL, '*')
 
@@ -59,9 +130,6 @@ class Lexer(object):
         self.advance()
         if self.current_char == '/':
             self.advance()
-            if self.current_char == '/':
-                self.error()
-                return Token(EOF, None)
             return Token(INT_DIV, '//')
         return Token(DIV, '/')
 
@@ -97,6 +165,10 @@ class Lexer(object):
             if self.current_char == '%':
                 self.advance()
                 return Token(MOD, '%')
+            if self.current_char in ('<', '>', '=', '!'):
+                return self.comparison_or_shift(self.current_char)
+            if self.current_char in ('a', 'i', 'n', 'o'):
+                return self.logical_or_identity_or_membership()
             self.error()
         return Token(EOF, None)
 
@@ -181,6 +253,98 @@ class Interpreter(object):
                     result -= self.term()
         return result
 
+    def shift(self):
+        result = self.expr()
+        while self.current_token.type in (BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT):
+            token = self.current_token
+            match token.type:
+                case "BIT_LEFT_SHIFT":
+                    self.eat(BIT_LEFT_SHIFT)
+                    result <<= self.expr()
+                case "BIT_RIGHT_SHIFT":
+                    self.eat(BIT_RIGHT_SHIFT)
+                    result >>= self.expr()
+        return result
+
+    def bit_and(self):
+        result = self.shift()
+        while self.current_token.type == BIT_AND:
+            self.eat(BIT_AND)
+            result &= self.shift()
+        return result
+
+    def bit_xor(self):
+        result = self.bit_and()
+        while self.current_token.type == BIT_XOR:
+            self.eat(BIT_XOR)
+            result ^= self.bit_and()
+        return result
+
+    def bit_or(self):
+        result = self.bit_xor()
+        while self.current_token.type == BIT_OR:
+            self.eat(BIT_OR)
+            result |= self.bit_xor()
+        return result
+
+    def comparison(self):
+        result = self.bit_or()
+        while self.current_token.type in (
+                EQUALS_TO, NOT_EQUALS_TO, SMALLER_OR_EQUALS, SMALLER, GREATER_OR_EQUALS, GREATER, IS, IS_NOT, IN, NOT_IN):
+            token = self.current_token
+            match token.type:
+                case "EQUALS_TO":
+                    self.eat(EQUALS_TO)
+                    result = result == self.bit_or()
+                case "NOT_EQUALS_TO":
+                    self.eat(NOT_EQUALS_TO)
+                    result = result != self.bit_or()
+                case "SMALLER_OR_EQUALS":
+                    self.eat(SMALLER_OR_EQUALS)
+                    result = result <= self.bit_or()
+                case "SMALLER":
+                    self.eat(SMALLER)
+                    result = result < self.bit_or()
+                case "GREATER_OR_EQUALS":
+                    self.eat(GREATER_OR_EQUALS)
+                    result = result >= self.bit_or()
+                case "GREATER":
+                    self.eat(GREATER)
+                    result = result > self.bit_or()
+                case "IS":
+                    self.eat(IS)
+                    result = result is self.bit_or()
+                case "IS_NOT":
+                    self.eat(IS_NOT)
+                    result = result is not self.bit_or()
+                case "IN":
+                    self.eat(IN)
+                    result = result in self.bit_or()
+                case "NOT_IN":
+                    self.eat(NOT_IN)
+                    result = result not in self.bit_or()
+        return result
+
+    def logical_not(self):
+        result = self.comparison()
+        while self.current_token.type == NOT:
+            self.eat(NOT)
+            result = not self.comparison()
+        return result
+
+    def logical_and(self):
+        result = self.logical_not()
+        while self.current_token.type == AND:
+            self.eat(AND)
+            result = result and self.logical_not()
+        return result
+
+    def logical_or(self):
+        result = self.logical_and()
+        while self.current_token.type == OR:
+            self.eat(OR)
+            result = result or self.logical_and()
+        return result
 
 def main():
     while True:
@@ -191,7 +355,7 @@ def main():
         if not text:
             continue
         interpreter = Interpreter(Lexer(text))
-        result = interpreter.expr()
+        result = interpreter.logical_or()
         print(result)
 
 
