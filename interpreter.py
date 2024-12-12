@@ -6,6 +6,7 @@
     'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
     'EQUALS', 'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'IN_NOT', 'NOT', 'AND', 'OR', 'EOF')
 
+
 class Token:
     def __init__(self, token_type, value):
         self.type = token_type
@@ -13,6 +14,7 @@ class Token:
 
     def __repr__(self):
         return f"Token({self.type}, {repr(self.value)})"
+
 
 class Lexer:
     def __init__(self, text):
@@ -74,13 +76,11 @@ class Lexer:
                 return Token(GREATER_OR_EQUALS, '>=')
             return Token(GREATER, '>')
         if character == '=':
-            self.advance()
             if self.current_char == '=':
                 self.advance()
                 return Token(EQUALS_TO, '==')
             return Token(EQUALS, '=')
         if character == '!':
-            self.advance()
             if self.current_char == '=':
                 self.advance()
                 return Token(NOT_EQUALS_TO, '!=')
@@ -139,6 +139,7 @@ class Lexer:
                 return self.logical_or_identity_or_membership()
             self.error()
         return Token(EOF, None)
+
 
 class Interpreter:
     def __init__(self, lexer):
@@ -248,7 +249,8 @@ class Interpreter:
     def comparison(self):
         result = self.bit_or()
         while self.current_token.type in (
-                EQUALS_TO, NOT_EQUALS_TO, SMALLER_OR_EQUALS, SMALLER, GREATER_OR_EQUALS, GREATER, IS, IS_NOT, IN, NOT_IN):
+                EQUALS_TO, NOT_EQUALS_TO, SMALLER_OR_EQUALS, SMALLER, GREATER_OR_EQUALS, GREATER, IS, IS_NOT, IN,
+                NOT_IN):
             token = self.current_token
             if token.type == EQUALS_TO:
                 self.eat(EQUALS_TO)
@@ -303,6 +305,7 @@ class Interpreter:
             result = result or self.logical_and()
         return result
 
+
 def main():
     while True:
         try:
@@ -314,6 +317,7 @@ def main():
         interpreter = Interpreter(Lexer(text))
         result = interpreter.logical_or()
         print(result)
+
 
 if __name__ == '__main__':
     main()
