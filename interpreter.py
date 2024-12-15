@@ -1,10 +1,11 @@
 # Token Types
-(INTEGER, PLUS, MINUS, MUL, DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT,
+(INTEGER, PLUS, MINUS, MUL, FLOAT_DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT,
+ BIT_RIGHT_SHIFT,
  GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, EQUALS, NOT_EQUALS_TO, IS, IS_NOT, IN, NOT_IN, NOT,
- AND, OR, EOF) = (
-    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
+ AND, OR, LPAREN, RPAREN, EOF) = (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
     'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
-    'EQUALS', 'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'IN_NOT', 'NOT', 'AND', 'OR', 'EOF')
+    'EQUALS', 'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'IN_NOT', 'NOT', 'AND', 'OR', '(', ')', 'EOF')
 
 
 class Token:
@@ -50,7 +51,7 @@ class Lexer:
     def logical_or_identity_or_membership(self):
         result = self.logical_operator()
         if result in ('is', 'not') and self.current_char == ' ':
-            self.advance()
+            self.skip_whitespace()
             result += self.logical_operator()
         tokens = {'is': IS, 'isnot': IS_NOT, 'in': IN, 'notin': NOT_IN, 'and': AND, 'or': OR, 'not': NOT}
         if result in tokens.keys():
@@ -99,7 +100,7 @@ class Lexer:
         if self.current_char == '/':
             self.advance()
             return Token(INT_DIV, '//')
-        return Token(DIV, '/')
+        return Token(FLOAT_DIV, '/')
 
     def get_next_token(self):
         while self.current_char:
@@ -133,6 +134,12 @@ class Lexer:
             if self.current_char == '%':
                 self.advance()
                 return Token(MOD, '%')
+            if self.current_char == '(':
+                self.advance()
+                return Token(LPAREN, '(')
+            if self.current_char == ')':
+                self.advance()
+                return Token(RPAREN, ')')
             if self.current_char in ('<', '>', '=', '!'):
                 return self.comparison_or_shift(self.current_char)
             if self.current_char in ('a', 'i', 'n', 'o'):
@@ -141,7 +148,30 @@ class Lexer:
         return Token(EOF, None)
 
 
-class Interpreter:
+class AST:
+    pass
+
+
+class BinaryOp(AST):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.op = op
+        self.right = right
+
+
+class UnaryOp(AST):
+    def __init__(self, op, right):
+        self.op = op
+        self.right = right
+
+
+class Num(AST):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+
+
+class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
@@ -155,167 +185,250 @@ class Interpreter:
         else:
             self.error()
 
-    @staticmethod
-    def sgn(x):
-        return (x > 0) - (x < 0)
-
     def factor(self):
         token = self.current_token
-        if token.type == PLUS:
-            self.eat(PLUS)
-            return self.exp()
-        if token.type == MINUS:
-            self.eat(MINUS)
-            return -self.exp()
-        if token.type == BIT_NOT:
-            self.eat(BIT_NOT)
-            return ~self.exp()
-        if token.type == NOT:
-            self.eat(NOT)
-            return not self.comparison()
-        self.eat(INTEGER)
+        unary = (PLUS, MINUS, BIT_NOT, NOT)
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            return Num(token)
+        elif token.type == LPAREN:
+            self.eat(LPAREN)
+            node = self.logical_or()
+            self.eat(RPAREN)
+            return node
+        elif token.type in unary:
+            self.eat(token.type)
+            node = UnaryOp(op=token, right=self.exp())
+            return node
+        # if token.type == PLUS:
+        #     self.eat(PLUS)
+        #     return self.exp()
+        # if token.type == MINUS:
+        #     self.eat(MINUS)
+        #     return -self.exp()
+        # if token.type == BIT_NOT:
+        #     self.eat(BIT_NOT)
+        #     return ~self.exp()
+        # if token.type == NOT:
+        #     self.eat(NOT)
+        #     return not self.comparison()
         return token.value
 
     def exp(self):
-        result = self.factor()
+        node = self.factor()
+
         while self.current_token.type == EXP:
-            self.eat(EXP)
-            result **= self.factor()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.factor())
+
+        return node
 
     def term(self):
-        result = self.exp()
-        while self.current_token.type in (MUL, DIV, MOD, INT_DIV):
+        node = self.exp()
+        binary = (MUL, FLOAT_DIV, MOD, INT_DIV)
+
+        while self.current_token.type in (MUL, FLOAT_DIV, MOD, INT_DIV):
             token = self.current_token
-            if token.type == MUL:
-                self.eat(MUL)
-                result *= self.term()
-            elif token.type == DIV:
-                self.eat(DIV)
-                result /= self.term()
-            elif token.type == MOD:
-                self.eat(MOD)
-                result %= self.term()
-            elif token.type == INT_DIV:
-                self.eat(INT_DIV)
-                result //= self.term()
-        return result
+            if token.type in binary:
+                self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.exp())
+
+        return node
 
     def expr(self):
-        result = self.term()
+        node = self.term()
+
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
-            if token.type == PLUS:
-                self.eat(PLUS)
-                result += self.term()
-            elif token.type == MINUS:
-                self.eat(MINUS)
-                result -= self.term()
-        return result
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.term())
+
+        return node
 
     def shift(self):
-        result = self.expr()
+        node = self.expr()
+
         while self.current_token.type in (BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT):
             token = self.current_token
-            if token.type == BIT_LEFT_SHIFT:
-                self.eat(BIT_LEFT_SHIFT)
-                result <<= self.expr()
-            elif token.type == BIT_RIGHT_SHIFT:
-                self.eat(BIT_RIGHT_SHIFT)
-                result >>= self.expr()
-        return result
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.expr())
+
+        return node
 
     def bit_and(self):
-        result = self.shift()
+        node = self.shift()
+
         while self.current_token.type == BIT_AND:
-            self.eat(BIT_AND)
-            result &= self.shift()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.shift())
+
+        return node
 
     def bit_xor(self):
-        result = self.bit_and()
+        node = self.bit_and()
+
         while self.current_token.type == BIT_XOR:
-            self.eat(BIT_XOR)
-            result ^= self.bit_and()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.bit_and())
+
+        return node
 
     def bit_or(self):
-        result = self.bit_xor()
+        node = self.bit_xor()
         while self.current_token.type == BIT_OR:
-            self.eat(BIT_OR)
-            result |= self.bit_xor()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.bit_xor())
+        return node
 
     def comparison(self):
-        result = self.bit_or()
+        node = self.bit_or()
+
         while self.current_token.type in (
                 EQUALS_TO, NOT_EQUALS_TO, SMALLER_OR_EQUALS, SMALLER, GREATER_OR_EQUALS, GREATER, IS, IS_NOT, IN,
                 NOT_IN):
             token = self.current_token
-            if token.type == EQUALS_TO:
-                self.eat(EQUALS_TO)
-                result = result == self.bit_or()
-            elif token.type == NOT_EQUALS_TO:
-                self.eat(NOT_EQUALS_TO)
-                result = result != self.bit_or()
-            elif token.type == SMALLER_OR_EQUALS:
-                self.eat(SMALLER_OR_EQUALS)
-                result = result <= self.bit_or()
-            elif token.type == SMALLER:
-                self.eat(SMALLER)
-                result = result < self.bit_or()
-            elif token.type == GREATER_OR_EQUALS:
-                self.eat(GREATER_OR_EQUALS)
-                result = result >= self.bit_or()
-            elif token.type == GREATER:
-                self.eat(GREATER)
-                result = result > self.bit_or()
-            elif token.type == IS:
-                self.eat(IS)
-                result = result is self.bit_or()
-            elif token.type == IS_NOT:
-                self.eat(IS_NOT)
-                result = result is not self.bit_or()
-            elif token.type == IN:
-                self.eat(IN)
-                result = result in self.bit_or()
-            elif token.type == NOT_IN:
-                self.eat(NOT_IN)
-                result = result not in self.bit_or()
-        return result
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.bit_or())
+
+        return node
 
     def logical_not(self):
-        result = self.comparison()
+        node = self.comparison()
+
         while self.current_token.type == NOT:
-            self.eat(NOT)
-            result = not self.comparison()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = UnaryOp(op=token, right=self.comparison())
+
+        return node
 
     def logical_and(self):
-        result = self.logical_not()
+        node = self.logical_not()
+
         while self.current_token.type == AND:
-            self.eat(AND)
-            result = result and self.logical_not()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.logical_not())
+
+        return node
 
     def logical_or(self):
-        result = self.logical_and()
+        node = self.logical_and()
+
         while self.current_token.type == OR:
-            self.eat(OR)
-            result = result or self.logical_and()
-        return result
+            token = self.current_token
+            self.eat(token.type)
+            node = BinaryOp(left=node, op=token, right=self.logical_and())
+
+        return node
+
+    def parse(self):
+        return self.logical_or()
+
+class NodeVisitor:
+    def visit(self, node):
+        method_name = 'visit_' + type(node).__name__
+        visitor = getattr(self, method_name, self.generic_visit)
+        return visitor(node)
+
+    def generic_visit(self, node):
+        raise Exception(f'No visit_{type(node).__name__} method')
+
+
+class Interpreter(NodeVisitor):
+    def __init__(self, parser):
+        self.parser = parser
+
+    def visit_BinaryOp(self, node):
+        if node.op.type == PLUS:
+            return self.visit(node.left) + self.visit(node.right)
+        elif node.op.type == MINUS:
+            return self.visit(node.left) - self.visit(node.right)
+        elif node.op.type == MUL:
+            return self.visit(node.left) * self.visit(node.right)
+        elif node.op.type == FLOAT_DIV:
+            return self.visit(node.left) / self.visit(node.right)
+        elif node.op.type == MOD:
+            return self.visit(node.left) % self.visit(node.right)
+        elif node.op.type == INT_DIV:
+            return self.visit(node.left) // self.visit(node.right)
+        elif node.op.type == EXP:
+            return self.visit(node.left) ** self.visit(node.right)
+        elif node.op.type == BIT_LEFT_SHIFT:
+            return self.visit(node.left) << self.visit(node.right)
+        elif node.op.type == BIT_RIGHT_SHIFT:
+            return self.visit(node.left) >> self.visit(node.right)
+        elif node.op.type == GREATER:
+            return self.visit(node.left) > self.visit(node.right)
+        elif node.op.type == SMALLER:
+            return self.visit(node.left) < self.visit(node.right)
+        elif node.op.type == GREATER_OR_EQUALS:
+            return self.visit(node.left) >= self.visit(node.right)
+        elif node.op.type == SMALLER_OR_EQUALS:
+            return self.visit(node.left) <= self.visit(node.right)
+        elif node.op.type == EQUALS_TO:
+            return self.visit(node.left) == self.visit(node.right)
+        elif node.op.type == NOT_EQUALS_TO:
+            return self.visit(node.left) != self.visit(node.right)
+        elif node.op.type == IS:
+            return self.visit(node.left) is self.visit(node.right)
+        elif node.op.type == IS_NOT:
+            return self.visit(node.left) is not self.visit(node.right)
+        elif node.op.type == IN:
+            return self.visit(node.left) in self.visit(node.right)
+        elif node.op.type == NOT_IN:
+            return self.visit(node.left) not in self.visit(node.right)
+        elif node.op.type == BIT_AND:
+            return self.visit(node.left) & self.visit(node.right)
+        elif node.op.type == BIT_XOR:
+            return self.visit(node.left) ^ self.visit(node.right)
+        elif node.op.type == BIT_OR:
+            return self.visit(node.left) | self.visit(node.right)
+        elif node.op.type == AND:
+            return self.visit(node.left) and self.visit(node.right)
+        elif node.op.type == OR:
+            return self.visit(node.left) or self.visit(node.right)
+
+
+    def visit_UnaryOp(self, node):
+        if node.op.type == NOT:
+            return not self.visit(node.right)
+        elif node.op.type == BIT_NOT:
+            return ~self.visit(node.right)
+        elif node.op == PLUS:
+            return self.visit(node.right)
+        elif node.op == MINUS:
+            return self.visit(node.right)
+
+    @staticmethod
+    def visit_Num(node):
+        return node.value
+
+    def interpret(self):
+        tree = self.parser.parse()
+        return self.visit(tree)
 
 
 def main():
     while True:
         try:
-            text = input('calc> ')
+            try:
+                text = input('spi> ')
+            except NameError:
+                text = input('spi> ')
         except EOFError:
             break
         if not text:
             continue
-        interpreter = Interpreter(Lexer(text))
-        result = interpreter.logical_or()
+
+        lexer = Lexer(text)
+        parser = Parser(lexer)
+        interpreter = Interpreter(parser)
+        result = interpreter.interpret()
         print(result)
 
 
