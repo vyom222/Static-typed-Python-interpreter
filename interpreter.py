@@ -53,7 +53,7 @@ class Lexer:
         if result in ('is', 'not') and self.current_char == ' ':
             self.skip_whitespace()
             result += self.logical_operator()
-        tokens = {'is': IS, 'isnot': IS_NOT, 'in': IN, 'notin': NOT_IN, 'and': AND, 'or': OR, 'not': NOT}
+        tokens = {'is ': IS, 'isnot': IS_NOT, 'in': IN, 'notin': NOT_IN, 'and': AND, 'or': OR, 'not': NOT}
         if result in tokens.keys():
             return Token(tokens[result], result)
         self.error()
@@ -160,9 +160,9 @@ class BinaryOp(AST):
 
 
 class UnaryOp(AST):
-    def __init__(self, op, right):
-        self.op = op
-        self.right = right
+    def __init__(self, op, expr):
+        self.token = self.op = op
+        self.expr = expr
 
 
 class Num(AST):
@@ -198,20 +198,8 @@ class Parser:
             return node
         elif token.type in unary:
             self.eat(token.type)
-            node = UnaryOp(op=token, right=self.exp())
+            node = UnaryOp(op=token, expr=self.factor())
             return node
-        # if token.type == PLUS:
-        #     self.eat(PLUS)
-        #     return self.exp()
-        # if token.type == MINUS:
-        #     self.eat(MINUS)
-        #     return -self.exp()
-        # if token.type == BIT_NOT:
-        #     self.eat(BIT_NOT)
-        #     return ~self.exp()
-        # if token.type == NOT:
-        #     self.eat(NOT)
-        #     return not self.comparison()
         return token.value
 
     def exp(self):
@@ -302,7 +290,7 @@ class Parser:
         while self.current_token.type == NOT:
             token = self.current_token
             self.eat(token.type)
-            node = UnaryOp(op=token, right=self.comparison())
+            node = UnaryOp(op=token, expr=self.comparison())
 
         return node
 
@@ -328,6 +316,7 @@ class Parser:
 
     def parse(self):
         return self.logical_or()
+
 
 class NodeVisitor:
     def visit(self, node):
@@ -393,16 +382,15 @@ class Interpreter(NodeVisitor):
         elif node.op.type == OR:
             return self.visit(node.left) or self.visit(node.right)
 
-
     def visit_UnaryOp(self, node):
         if node.op.type == NOT:
-            return not self.visit(node.right)
+            return not self.visit(node.expr)
         elif node.op.type == BIT_NOT:
-            return ~self.visit(node.right)
-        elif node.op == PLUS:
-            return self.visit(node.right)
-        elif node.op == MINUS:
-            return self.visit(node.right)
+            return ~self.visit(node.expr)
+        elif node.op.type == PLUS:
+            return self.visit(node.expr)
+        elif node.op.type == MINUS:
+            return -self.visit(node.expr)
 
     @staticmethod
     def visit_Num(node):
