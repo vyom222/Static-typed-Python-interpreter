@@ -1,0 +1,8 @@
+a: var = 5f
+b: int = 5
+c: float = a + b / 5 * 10
+d: float = a // c
+g: float = 99
+h: str = "hello"
+i: bool = True
+j: NoneType = None
