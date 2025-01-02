@@ -1,6 +1,6 @@
 # Token Types
 # EOF - End of File token
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, EOF, MULTIPLY, DIVIDE = 'INTEGER', 'PLUS', 'MINUS', 'EOF', 'MULTIPLY', 'DIVIDE'
 
 
 class Token(object):
@@ -62,6 +62,12 @@ class Interpreter(object):
             if self.current_char == '-':
                 self.advance()
                 return Token(MINUS, '-')
+            if self.current_char == '*':
+                self.advance()
+                return Token(MULTIPLY, '+')
+            if self.current_char == '/':
+                self.advance()
+                return Token(DIVIDE, '/')
             self.error()
         return Token(EOF, None)
 
@@ -85,6 +91,12 @@ class Interpreter(object):
         if token.type == MINUS:
             self.eat(MINUS)
             return -self.term()
+        if token.type == MULTIPLY:
+            self.eat(MULTIPLY)
+            return self.term()
+        if token.type == DIVIDE:
+            self.eat(DIVIDE)
+            return self.term()
         self.eat(INTEGER)
         return token.value
 
@@ -92,7 +104,7 @@ class Interpreter(object):
         # set current token to the first token taken from the input
         self.current_token = self.get_next_token()
         result = self.term()
-        while self.current_token.type in (PLUS, MINUS):
+        while self.current_token.type in (PLUS, MINUS, MULTIPLY, DIVIDE):
             token = self.current_token
             match token.type:
                 case "PLUS":
@@ -101,6 +113,12 @@ class Interpreter(object):
                 case "MINUS":
                     self.eat(MINUS)
                     result -= self.term()
+                case "MULTIPLY":
+                    self.eat(MULTIPLY)
+                    result *= self.term()
+                case "DIVIDE":
+                    self.eat(DIVIDE)
+                    result /= self.term()
         return result
 
 
