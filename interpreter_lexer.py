@@ -88,6 +88,13 @@ class Lexer:
         while self.current_char and self.current_char.isspace() and self.current_char != '\n':
             self.advance()
 
+    def skip_comment(self):
+        """
+        Skips comments in the input text.
+        """
+        while self.current_char != '\n':
+            self.advance()
+
     def number(self):
         """
         Returns a (multi-digit) integer or float consumed from the input.
@@ -114,9 +121,9 @@ class Lexer:
                 self.advance()
         if self.current_char == 'f':
             self.advance()
-            token = Token('FLOAT_CONST', float(result))
+            token = Token(FLOAT_CONST, float(result))
         elif '.' not in result:
-            token = Token('INT_CONST', int(result))
+            token = Token(INT_CONST, int(result))
         else:
             token = None
             self.error(self.current_char)
@@ -142,7 +149,7 @@ class Lexer:
             result += self.current_char
             self.advance()
         self.advance()
-        token = Token('STRING_CONST', result)
+        token = Token(STRING_CONST, result)
         return token
 
     def _id(self):
@@ -195,6 +202,10 @@ class Lexer:
                     continue
                 if self.prev() == '\n' or self.prev() is None:
                     return self.indent()
+            if self.current_char == '#':
+                self.advance()
+                self.skip_comment()
+                continue
             if self.current_char.isdigit():
                 return self.number()
             if self.current_char == '"':
@@ -285,10 +296,10 @@ class Lexer:
                 return Token(NEWLINE, '\n')
             if self.current_char == ':':
                 self.advance()
-                return Token('COLON', ':')
+                return Token(COLON, ':')
             if self.current_char == ',':
                 self.advance()
-                return Token('COMMA', ',')
+                return Token(COMMA, ',')
             if self.current_char.isalpha():
                 return self._id()
             self.error(self.current_char)

@@ -93,17 +93,17 @@ class Parser:
         """
         token = self.current_token
         if self.current_token.type == "INT":
-            self.eat('INT')
+            self.eat(INT)
         elif self.current_token.type == "FLOAT":
-            self.eat('FLOAT')
+            self.eat(FLOAT)
         elif self.current_token.type == "STR":
-            self.eat('STR')
+            self.eat(STR)
         elif self.current_token.type == "BOOL":
-            self.eat('BOOL')
-        elif self.current_token.type == "NONE-TYPE":
-            self.eat('NONE-TYPE')
+            self.eat(BOOL)
+        elif self.current_token.type == "NONETYPE":
+            self.eat(NONETYPE)
         elif self.current_token.type == "VAR":
-            self.eat('VAR')
+            self.eat(VAR)
         node = Type(token)
         return node
 
@@ -240,20 +240,20 @@ class Parser:
             node = self.logical_or()
             self.eat(RPAREN)
             return node
-        elif token.type == 'INT_CONST':
-            self.eat('INT_CONST')
+        elif token.type == INT_CONST:
+            self.eat(INT_CONST)
             return Integer(token)
-        elif token.type == 'FLOAT_CONST':
-            self.eat('FLOAT_CONST')
+        elif token.type == FLOAT_CONST:
+            self.eat(FLOAT_CONST)
             return Float(token)
-        elif token.type == 'STRING_CONST':
-            self.eat('STRING_CONST')
+        elif token.type == STRING_CONST:
+            self.eat(STRING_CONST)
             return String(token)
-        elif token.type == 'BOOLEAN_CONST':
-            self.eat('BOOLEAN_CONST')
+        elif token.type == BOOLEAN_CONST:
+            self.eat(BOOLEAN_CONST)
             return Boolean(token)
-        elif token.type == 'NONE-TYPE_CONST':
-            self.eat('NONE-TYPE_CONST')
+        elif token.type == NONETYPE_CONSTANT:
+            self.eat(NONETYPE_CONSTANT)
             return NoneType(token)
         elif token.type in unary:
             self.eat(token.type)

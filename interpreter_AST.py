@@ -161,7 +161,7 @@ class Boolean(AST):
             The token representing the boolean constant
         """
         self.token = token
-        self.value = bool(token.value)
+        self.value = True == token.value
 
 
 class NoneType(AST):

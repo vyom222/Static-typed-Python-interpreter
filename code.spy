@@ -1,4 +1,5 @@
-a: var = 5f
+# this is a comment
+a: var = False
 b: int = 5
 c: float = a + b / 5 * 10
 d: float = a // c

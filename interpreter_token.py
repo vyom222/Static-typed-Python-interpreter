@@ -1,11 +1,47 @@
-(INTEGER, PLUS, MINUS, MUL, FLOAT_DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT,
- BIT_RIGHT_SHIFT,
- GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, NOT_EQUALS_TO, IS, IS_NOT, IN, NOT_IN, NOT,
- AND, OR, LPAREN, RPAREN, ASSIGN, ID, SEMI, NEWLINE, DOT, IF, WHILE, FOR, DEF, COLON, COMMA, INDENT, EOF) = (
-    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
-    'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
-    'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'NOT_IN', 'NOT', 'AND', 'OR', '(', ')', 'ASSIGN', 'ID', 'SEMI',
-    'DOT', 'NEWLINE', 'IF', 'WHILE', 'FOR', 'DEF', 'COLON', 'COMMA', 'INDENT', 'EOF')
+# Token Types
+(INT, FLOAT, STR, BOOL, VAR, NONETYPE, PLUS, MINUS, MUL, FLOAT_DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV,
+ EXP, BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT, GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, NOT_EQUALS_TO,
+ IS, IS_NOT, IN, NOT_IN, NOT, AND, OR, LPAREN, RPAREN, ASSIGN, ID, SEMI, NEWLINE, DOT, IF, WHILE, FOR, DEF, COLON,
+ COMMA, INDENT, STRING_CONST, INT_CONST, FLOAT_CONST, BOOLEAN_CONST, NONETYPE_CONSTANT, EOF) = (
+    'INT', 'FLOAT', 'STR', 'BOOL', 'VAR', 'NONETYPE', 'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'BIT_NOT', 'BIT_XOR',
+    'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP', 'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER',
+    'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO', 'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'NOT_IN', 'NOT',
+    'AND',
+    'OR', '(', ')', 'ASSIGN', 'ID', 'SEMI', 'DOT', 'NEWLINE', 'IF', 'WHILE', 'FOR', 'DEF', 'COLON', 'COMMA', 'INDENT',
+    'STRING_CONST', 'INT_CONST', 'FLOAT_CONST', 'BOOLEAN_CONST', 'NONETYPE_CONSTANT', 'EOF')
+from enum import Enum
+
+
+class TokenType(Enum):
+    MINUS = '-'
+    MUL = '*'
+    FLOAT_DIV = '/'
+    BIT_NOT = '~'
+    BIT_XOR = '^'
+    BIT_AND = '&'
+    BIT_OR = '|'
+    MOD = '%'
+    INT_DIV = '//'
+    EXP = '**'
+    BIT_LEFT_SHIFT = '<<'
+    BIT_RIGHT_SHIFT = '>>'
+    GREATER = '>'
+    SMALLER = '<'
+    GREATER_OR_EQUALS = '>='
+    SMALLER_OR_EQUALS = '<='
+    EQUALS_TO = '=='
+    NOT_EQUALS_TO = '!='
+    LPAREN = '('
+    RPAREN = ')'
+    ASSIGN = '='
+    SEMI = ';'
+    NEWLINE = '\n'
+    DOT = '.'
+    COLON = ':'
+    COMMA = ','
+    ID = 'ID'
+    INDENT = 'INDENT'
+    EOF = 'EOF'
 
 
 class Token:
@@ -58,13 +94,13 @@ RESERVED_KEYWORDS = {
     'while': Token(WHILE, 'while'),
     'for': Token(FOR, 'for'),
     'def': Token(DEF, 'def'),
-    'int': Token('INT', 'int'),
-    'float': Token('FLOAT', 'float'),
-    'var': Token('VAR', 'var'),
-    'str': Token('STR', 'str'),
-    'bool': Token('BOOL', 'bool'),
-    'NoneType': Token('NONE-TYPE', 'NoneType'),
-    'True': Token('BOOLEAN_CONST', 'True'),
-    'False': Token('BOOLEAN_CONST', 'False'),
-    'None': Token('NONE-TYPE_CONST', 'None')
+    'int': Token(INT, 'int'),
+    'float': Token(FLOAT, 'float'),
+    'var': Token(VAR, 'var'),
+    'str': Token(STR, 'str'),
+    'bool': Token(BOOL, 'bool'),
+    'NoneType': Token(NONETYPE, 'NoneType'),
+    'True': Token(BOOLEAN_CONST, 'True'),
+    'False': Token(BOOLEAN_CONST, 'False'),
+    'None': Token(NONETYPE_CONSTANT, 'None')
 }

@@ -16,6 +16,5 @@ def main():
     print(interpreter.GLOBAL_MEMORY)
     print(interpreter.symtable)
 
-
 if __name__ == '__main__':
     main()
