@@ -1,13 +1,12 @@
 # Token Types
-
 (INTEGER, PLUS, MINUS, MUL, FLOAT_DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT,
  BIT_RIGHT_SHIFT,
  GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, NOT_EQUALS_TO, IS, IS_NOT, IN, NOT_IN, NOT,
- AND, OR, LPAREN, RPAREN, ASSIGN, ID, SEMI, DOT, NEWLINE, IF, WHILE, FOR, DEF, COLON, COMMA, EOF) = (
+ AND, OR, LPAREN, RPAREN, ASSIGN, ID, SEMI, NEWLINE, DOT, IF, WHILE, FOR, DEF, COLON, COMMA, INDENT, EOF) = (
     'INTEGER', 'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
     'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
     'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'NOT_IN', 'NOT', 'AND', 'OR', '(', ')', 'ASSIGN', 'ID', 'SEMI',
-    'DOT', 'NEWLINE', 'IF', 'WHILE', 'FOR', 'DEF', 'COLON', 'COMMA', 'EOF')
+    'DOT', 'NEWLINE', 'IF', 'WHILE', 'FOR', 'DEF', 'COLON', 'COMMA', 'INDENT', 'EOF')
 
 
 class Token:
@@ -137,11 +136,26 @@ class Lexer:
         else:
             return self.text[peek_pos]
 
+    def prev(self):
+        """
+        Returns the previous character in the input text without moving the `pos` pointer.
+
+        Returns:
+        -------
+        str
+            The previous character in the input text, or None if at the beginning of the text
+        """
+        prev_pos = self.pos - 1
+        if prev_pos < 0:
+            return None
+        else:
+            return self.text[prev_pos]
+
     def skip_whitespace(self):
         """
         Skips whitespace characters in the input text.
         """
-        while self.current_char and self.current_char.isspace():
+        while self.current_char and self.current_char.isspace() and self.current_char != '\n':
             self.advance()
 
     def number(self):
@@ -218,6 +232,23 @@ class Lexer:
         token = RESERVED_KEYWORDS.get(result, Token(ID, result))
         return token
 
+    def indent(self):
+        """
+        Returns an indent token consumed from the input.
+
+        Returns:
+        -------
+        Token
+            The indent token with the count of spaces / tabs
+        """
+        count = 0
+        while self.current_char and self.current_char.isspace() and self.current_char != '\n':
+            count += 1
+            self.advance()
+
+        token = Token(INDENT, count)
+        return token
+
     def get_next_token(self):
         """
         Returns an identifier token or a reserved keyword token consumed from the input.
@@ -227,10 +258,13 @@ class Lexer:
         Token
             A token representing an identifier or a reserved keyword
         """
-        while self.current_char or self.current_char == '\n':
-            if self.current_char.isspace():
-                self.skip_whitespace()
-                continue
+        while self.current_char:
+            if self.current_char.isspace() and self.current_char != '\n':
+                if self.prev() != '\n' and self.prev() is not None:
+                    self.skip_whitespace()
+                    continue
+                if self.prev() == '\n' or self.prev() is None:
+                    return self.indent()
             if self.current_char.isdigit():
                 return self.number()
             if self.current_char == '"':
@@ -315,7 +349,10 @@ class Lexer:
                 return Token(NOT_EQUALS_TO, '!=')
             if self.current_char == ';':
                 self.advance()
-                return Token('SEMI', ';')
+                return Token(SEMI, ';')
+            if self.current_char == '\n':
+                self.advance()
+                return Token(NEWLINE, '\n')
             if self.current_char == ':':
                 self.advance()
                 return Token('COLON', ':')
@@ -519,21 +556,71 @@ class NoneType(AST):
         self.value: None = None
 
 
-class Compound(AST):
+class Program(AST):
     """
-    A class to represent a compound statement node in the AST.
+    A class to represent program in the AST.
 
     Attributes:
     ----------
     children : list
-        A list of child nodes representing the statements in the compound statement
+        A list of child nodes representing the statements in the program
     """
 
     def __init__(self):
         """
-        Constructs all the necessary attributes for the compound statement node.
+        Constructs all the necessary attributes for the program node.
         """
         self.children: list = []
+
+
+class Compound(AST):
+    """
+    A class to represent compound statements in the AST.
+
+    Attributes:
+    ----------
+    children : list
+        A list of child nodes representing the statements in the program
+    """
+
+    def __init__(self):
+        """
+        Constructs all the necessary attributes for the program node.
+        """
+        self.children: list = []
+
+
+
+class Func(AST):
+    """
+    A class to represent a function node in the AST.
+
+    Attributes:
+    ----------
+    func_name : str
+        The name of the function
+    func_params : list
+        A list of the function parameters
+    func_body : Compound
+        The body of the function
+    """
+
+    def __init__(self, func_name, func_params):
+        """
+        Constructs all the necessary attributes for the function node.
+
+        Parameters:
+        ----------
+        func_name : str
+            The name of the function
+        func_params : list
+            A list of the function parameters
+        func_body : Compound
+            The body of the function
+        """
+        self.func_name = func_name
+        self.func_params = func_params
+        self.func_body: list = []
 
 
 class Assign(AST):
@@ -710,8 +797,12 @@ class Parser:
         Compound
             The root node of the program
         """
-        node = self.compound_statement()
-        return node
+        nodes = self.statement_list()
+        root = Program()
+        for node in nodes:
+            root.children.append(node)
+        return root
+
 
     def variable_declaration(self):
         """
@@ -782,8 +873,8 @@ class Parser:
         node = self.statement()
         results = [node]
 
-        while self.current_token.type == 'SEMI':
-            self.eat('SEMI')
+        while self.current_token.type in (SEMI, NEWLINE):
+            self.eat(self.current_token.type)
             results.append(self.statement())
 
         if self.current_token.type == ID:
@@ -800,12 +891,35 @@ class Parser:
         AST
             The statement node
         """
-        if self.current_token.type in (DEF, IF, WHILE, FOR):
-            node = self.compound_statement()
+        if self.current_token.type in (DEF):
+            node = self.function_statement()
         elif self.current_token.type == ID:
             node = self.assignment_statement()
         else:
             node = self.empty()
+        return node
+
+    def function_statement(self):
+        """
+        Parses a function statement node.
+
+        Returns:
+        -------
+        Func
+            The function statement node
+        """
+        self.eat(DEF)
+        func_name = self.current_token.value
+        self.eat(ID)
+        self.eat(LPAREN)
+        # func_params = self.function_parameters()
+        self.eat(RPAREN)
+        self.eat(COLON)
+        node = Func(func_name, None)
+        target_indent_value, current_indent_value = self.current_token.value, self.current_token.value
+        self.eat(INDENT)
+        while current_indent_value == target_indent_value:
+            pass
         return node
 
     def assignment_statement(self):
@@ -1522,6 +1636,18 @@ class Interpreter(NodeVisitor):
         for child in node.children:
             self.visit(child)
 
+    def visit_Program(self, node):
+        """
+        Visits Program node and processes all child nodes.
+
+        Parameters:
+        ----------
+        node : Program
+            The Program node to visit
+        """
+        for child in node.children:
+            self.visit(child)
+
     def visit_NoOp(self, node):
         """
         Visits a no-operation (empty) statement node. This method does nothing.
@@ -1597,7 +1723,6 @@ def main():
     """
     with open('code.spy', 'r') as f:
         text = f.read()
-    text = text.replace('\n', ';')
     lexer = Lexer(text)
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
