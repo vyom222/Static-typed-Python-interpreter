@@ -590,7 +590,6 @@ class Compound(AST):
         self.children: list = []
 
 
-
 class Func(AST):
     """
     A class to represent a function node in the AST.
@@ -802,7 +801,6 @@ class Parser:
         for node in nodes:
             root.children.append(node)
         return root
-
 
     def variable_declaration(self):
         """
