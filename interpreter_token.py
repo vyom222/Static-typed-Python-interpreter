@@ -1,0 +1,70 @@
+(INTEGER, PLUS, MINUS, MUL, FLOAT_DIV, BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, MOD, INT_DIV, EXP, BIT_LEFT_SHIFT,
+ BIT_RIGHT_SHIFT,
+ GREATER, SMALLER, GREATER_OR_EQUALS, SMALLER_OR_EQUALS, EQUALS_TO, NOT_EQUALS_TO, IS, IS_NOT, IN, NOT_IN, NOT,
+ AND, OR, LPAREN, RPAREN, ASSIGN, ID, SEMI, NEWLINE, DOT, IF, WHILE, FOR, DEF, COLON, COMMA, INDENT, EOF) = (
+    'INTEGER', 'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'MOD', 'INT_DIV', 'EXP',
+    'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT', 'GREATER', 'SMALLER', 'GREATER_OR_EQUALS', 'SMALLER_OR_EQUALS', 'EQUALS_TO',
+    'NOT_EQUALS_TO', 'IS', 'IS_NOT', 'IN', 'NOT_IN', 'NOT', 'AND', 'OR', '(', ')', 'ASSIGN', 'ID', 'SEMI',
+    'DOT', 'NEWLINE', 'IF', 'WHILE', 'FOR', 'DEF', 'COLON', 'COMMA', 'INDENT', 'EOF')
+
+
+class Token:
+    """
+    A class to represent a token.
+
+    Attributes:
+    ----------
+    type : str
+        The type of the token (e.g., INTEGER, PLUS, etc.)
+    value : any
+        The value of the token (e.g., 3, '+', etc.)
+    """
+
+    def __init__(self, token_type: str, value):
+        """
+        Constructs all the necessary attributes for the token object.
+
+        Parameters:
+        ----------
+        token_type : str
+            The type of the token
+        value : any
+            The value of the token
+        """
+        self.type = token_type
+        self.value = value
+
+    def __repr__(self):
+        """
+        Returns a string representation of the token.
+
+        Returns:
+        -------
+        str
+            A string representation of the token
+        """
+        return f"Token({self.type}, {repr(self.value)})"
+
+
+RESERVED_KEYWORDS = {
+    'and': Token(AND, 'and'),
+    'or': Token(OR, 'or'),
+    'not': Token(NOT, 'not'),
+    'is': Token(IS, 'is'),
+    'is not': Token(IS_NOT, 'is not'),
+    'in': Token(IN, 'in'),
+    'not in': Token(NOT_IN, 'not in'),
+    'if': Token(IF, 'if'),
+    'while': Token(WHILE, 'while'),
+    'for': Token(FOR, 'for'),
+    'def': Token(DEF, 'def'),
+    'int': Token('INT', 'int'),
+    'float': Token('FLOAT', 'float'),
+    'var': Token('VAR', 'var'),
+    'str': Token('STR', 'str'),
+    'bool': Token('BOOL', 'bool'),
+    'NoneType': Token('NONE-TYPE', 'NoneType'),
+    'True': Token('BOOLEAN_CONST', 'True'),
+    'False': Token('BOOLEAN_CONST', 'False'),
+    'None': Token('NONE-TYPE_CONST', 'None')
+}
