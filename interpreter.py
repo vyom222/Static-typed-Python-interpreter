@@ -503,6 +503,3 @@ class Interpreter(NodeVisitor):
         """
         tree = self.parser.parse()
         return self.visit(tree)
-
-
-x: float = 10 / 2 ** (-3 + 4)

@@ -27,10 +27,6 @@ def main():
     with open(args.filename, 'r') as f:
         text = f.read()
 
-    # with open('code.spy', 'r') as f:
-    #     text = f.read()
-
-    # Run the lexer, parser, and interpreter
     lexer = Lexer(text)
     parser = Parser(lexer)
     interpreter = Interpreter(parser)
