@@ -38,7 +38,7 @@ def run_cli(debug):
     """
     Enter CLI mode for the interpreter.
     """
-    print("\033[38;2;146;144;144;48;2;64;62;65mSPython Console\033[0m")
+    print("\033[38;2;147;146;147;48;2;64;62;65mSPython Console\033[0m")
 
     interpreter = None
     while True:

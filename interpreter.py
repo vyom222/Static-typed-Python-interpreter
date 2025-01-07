@@ -458,7 +458,7 @@ class Interpreter(NodeVisitor):
         type_symbol = node.left.type_node.value
         var_value = self.visit(node.right)
         if type_symbol is None:
-            type_symbol = self.symtable.lookup(var_name).__str__()
+            type_symbol = self.symtable.lookup(var_name).__repr__()
         var_type = type(var_value).__name__
         if type_symbol == 'var':
             type_symbol = var_type
@@ -466,6 +466,8 @@ class Interpreter(NodeVisitor):
             var_value = float(var_value)
             var_type = 'float'
         if var_type != type_symbol:
+            if type_symbol == "None":
+                raise SyntaxError(f"Variable '{var_name}' is missing a type declaration.")
             raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
         var_type = VarSymbol(var_name, type_symbol)
         self.symtable.define(var_type)
