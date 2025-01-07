@@ -5,5 +5,5 @@ c: float = a + b / 5 * 10
 d: float = a // c
 g: float = 99
 h: str = "hello"
-i: bool = True
+i: bool = True is False
 j: NoneType = None

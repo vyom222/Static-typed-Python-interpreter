@@ -1,6 +1,7 @@
 from interpreter_AST import *
 from interpreter_token import *
 
+
 class Parser:
     """
     A class to represent a parser (syntax analyzer).
@@ -76,6 +77,10 @@ class Parser:
         """
         var_node = Var(self.current_token)  # first ID
         self.eat(ID)
+        if self.current_token.type == ASSIGN:
+            type_node = Type(Token(NONETYPE, None))
+            var_declarations = VarDeclaration(var_node, type_node)
+            return var_declarations
         self.eat(COLON)
         type_node = self.type_spec()
         var_declarations = VarDeclaration(var_node, type_node)
@@ -152,7 +157,7 @@ class Parser:
         AST
             The statement node
         """
-        if self.current_token.type in (DEF):
+        if self.current_token.type in DEF:
             node = self.function_statement()
         elif self.current_token.type == ID:
             node = self.assignment_statement()
@@ -234,7 +239,7 @@ class Parser:
             The factor node
         """
         token = self.current_token
-        unary = (PLUS, MINUS, BIT_NOT, NOT)
+        unary = (PLUS, MINUS, BIT_NOT)
         if token.type == LPAREN:
             self.eat(LPAREN)
             node = self.logical_or()
@@ -246,8 +251,8 @@ class Parser:
         elif token.type == FLOAT_CONST:
             self.eat(FLOAT_CONST)
             return Float(token)
-        elif token.type == STRING_CONST:
-            self.eat(STRING_CONST)
+        elif token.type == STR_CONST:
+            self.eat(STR_CONST)
             return String(token)
         elif token.type == BOOLEAN_CONST:
             self.eat(BOOLEAN_CONST)

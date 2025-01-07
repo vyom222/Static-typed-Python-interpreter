@@ -102,7 +102,8 @@ class VarSymbol(Symbol):
         str
             A string representation of the variable symbol
         """
-        return f"<class '{self.type}'>"
+        # return f"<class '{self.type}'>"
+        return self.type
 
     __repr__ = __str__
 
@@ -137,7 +138,8 @@ class BuiltinTypeSymbol(Symbol):
         str
             A string representation of the built-in type symbol
         """
-        return f"<class '{self.name}'>"
+        # return f"<class '{self.name}'>"
+        return self.name
 
     __repr__ = __str__
 
@@ -455,6 +457,8 @@ class Interpreter(NodeVisitor):
         var_name = node.left.var_node.value
         type_symbol = node.left.type_node.value
         var_value = self.visit(node.right)
+        if type_symbol is None:
+            type_symbol = self.symtable.lookup(var_name).__str__()
         var_type = type(var_value).__name__
         if type_symbol == 'var':
             type_symbol = var_type
@@ -499,3 +503,6 @@ class Interpreter(NodeVisitor):
         """
         tree = self.parser.parse()
         return self.visit(tree)
+
+
+x: float = 10 / 2 ** (-3 + 4)

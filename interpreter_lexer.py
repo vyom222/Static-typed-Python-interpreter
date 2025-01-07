@@ -149,7 +149,7 @@ class Lexer:
             result += self.current_char
             self.advance()
         self.advance()
-        token = Token(STRING_CONST, result)
+        token = Token(STR_CONST, result)
         return token
 
     def _id(self):
