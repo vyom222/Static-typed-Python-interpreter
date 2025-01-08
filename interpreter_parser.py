@@ -25,6 +25,9 @@ class Parser:
         """
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
+        self.compound_assign = (
+        PLUS_EQUALS, MINUS_EQUALS, MUL_EQUALS, FLOAT_DIV_EQUALS, MOD_EQUALS, INT_DIV_EQUALS, EXP_EQUALS, BIT_AND_EQUALS,
+        BIT_OR_EQUALS, BIT_XOR_EQUALS, BIT_LEFT_SHIFT_EQUALS, BIT_RIGHT_SHIFT_EQUALS)
 
     def error(self):
         """
@@ -77,7 +80,7 @@ class Parser:
         """
         var_node = Var(self.current_token)  # first ID
         self.eat(ID)
-        if self.current_token.type == ASSIGN:
+        if self.current_token.type in (ASSIGN, *self.compound_assign):
             type_node = Type(Token(NONETYPE, None))
             var_declarations = VarDeclaration(var_node, type_node)
             return var_declarations
@@ -199,6 +202,11 @@ class Parser:
         """
         left = self.variable_declaration()
         token = self.current_token
+        if token.type in self.compound_assign:
+            self.eat(token.type)
+            right = self.logical_or()
+            node = CompoundAssign(left, token, right)
+            return node
         self.eat(ASSIGN)
         right = self.logical_or()
         node = Assign(left, token, right)

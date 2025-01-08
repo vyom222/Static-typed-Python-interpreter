@@ -9,6 +9,16 @@ PLUS, MINUS, MUL, FLOAT_DIV, MOD, INT_DIV, EXP = (
     'PLUS', 'MINUS', 'MUL', 'FLOAT_DIV', 'MOD', 'INT_DIV', 'EXP'
 )
 
+# Compound Assignment Operators
+PLUS_EQUALS, MINUS_EQUALS, MUL_EQUALS, FLOAT_DIV_EQUALS, MOD_EQUALS, INT_DIV_EQUALS, EXP_EQUALS = (
+    'PLUS_EQUALS', 'MINUS_EQUALS', 'MUL_EQUALS', 'FLOAT_DIV_EQUALS', 'MOD_EQUALS', 'INT_DIV_EQUALS', 'EXP_EQUALS',
+)
+
+# Compound Bitwise Assignment Operators
+BIT_AND_EQUALS, BIT_OR_EQUALS, BIT_XOR_EQUALS, BIT_LEFT_SHIFT_EQUALS, BIT_RIGHT_SHIFT_EQUALS = (
+    'BIT_AND_EQUALS', 'BIT_OR_EQUALS', 'BIT_XOR_EQUALS', 'BIT_LEFT_SHIFT_EQUALS', 'BIT_RIGHT_SHIFT_EQUALS'
+)
+
 # Bitwise Operators
 BIT_NOT, BIT_XOR, BIT_AND, BIT_OR, BIT_LEFT_SHIFT, BIT_RIGHT_SHIFT = (
     'BIT_NOT', 'BIT_XOR', 'BIT_AND', 'BIT_OR', 'BIT_LEFT_SHIFT', 'BIT_RIGHT_SHIFT'
@@ -117,6 +127,7 @@ class Token:
             A string representation of the token
         """
         return f"Token({self.type}, {repr(self.value)})"
+
 
 RESERVED_KEYWORDS = {
     'and': Token(AND, 'and'),

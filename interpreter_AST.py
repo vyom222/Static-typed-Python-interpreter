@@ -286,6 +286,36 @@ class Assign(AST):
         self.token = self.op = op
         self.right = right
 
+class CompoundAssign(AST):
+    """
+    A class to represent an assignment statement node in the AST.
+
+    Attributes:
+    ----------
+    left : Var
+        The variable being assigned a value
+    op : Token
+        The assignment operator token
+    right : AST
+        The expression representing the value being assigned
+    """
+
+    def __init__(self, left, op, right):
+        """
+        Constructs all the necessary attributes for the assignment statement node.
+
+        Parameters:
+        ----------
+        left : Var
+            The variable being assigned a value
+        op : Token
+            The assignment operator token
+        right : AST
+            The expression representing the value being assigned
+        """
+        self.left = left
+        self.token = self.op = op
+        self.right = right
 
 class Var(AST):
     """

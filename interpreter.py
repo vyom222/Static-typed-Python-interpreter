@@ -1,5 +1,8 @@
 from interpreter_token import *
 
+class Undefined:
+    def __repr__(self):
+        return 'Undefined'
 
 class NodeVisitor:
     """
@@ -209,7 +212,10 @@ class SymbolTable:
         Symbol
             The symbol if found, otherwise None
         """
-        return self._symbols.get(name)
+        var_type = self._symbols.get(name)
+        if var_type is None:
+            raise SyntaxError(f"Variable '{name}' is missing a type declaration.")
+        return var_type
 
 
 class Interpreter(NodeVisitor):
@@ -458,7 +464,7 @@ class Interpreter(NodeVisitor):
         type_symbol = node.left.type_node.value
         var_value = self.visit(node.right)
         if type_symbol is None:
-            type_symbol = self.symtable.lookup(var_name).__repr__()
+            type_symbol = self.symtable.lookup(var_name).type
         var_type = type(var_value).__name__
         if type_symbol == 'var':
             type_symbol = var_type
@@ -466,12 +472,63 @@ class Interpreter(NodeVisitor):
             var_value = float(var_value)
             var_type = 'float'
         if var_type != type_symbol:
-            if type_symbol == "None":
-                raise SyntaxError(f"Variable '{var_name}' is missing a type declaration.")
             raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
         var_type = VarSymbol(var_name, type_symbol)
         self.symtable.define(var_type)
         self.GLOBAL_MEMORY[var_name] = var_value
+
+    def visit_CompoundAssign(self, node):
+        """
+        Visits a compound assignment statement node and assigns the value to the variable.
+
+        Parameters:
+        ----------
+        node : CompoundAssign
+            The compound assignment statement node to visit
+        """
+        type_symbol = node.left.type_node.value
+        if type_symbol is None:
+            var_name = node.left.var_node.value
+            operator = node.op.type
+            if var_name not in self.GLOBAL_MEMORY:
+                raise NameError(f"name {repr(var_name)} is not defined")
+            var_assign_value = self.visit(node.right)
+            var_type = type(var_assign_value).__name__
+            type_symbol = self.symtable.lookup(var_name).type
+            if (var_type, type_symbol) == ('int', 'float'):
+                var_assign_value = float(var_assign_value)
+                var_type = 'float'
+            if type_symbol != var_type:
+                raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
+            if operator == PLUS_EQUALS:
+                self.GLOBAL_MEMORY[var_name] += var_assign_value
+            elif operator == MINUS_EQUALS:
+                self.GLOBAL_MEMORY[var_name] -= var_assign_value
+            elif operator == MUL_EQUALS:
+                self.GLOBAL_MEMORY[var_name] *= var_assign_value
+            elif operator == FLOAT_DIV_EQUALS:
+                self.GLOBAL_MEMORY[var_name] /= var_assign_value
+                if type_symbol == 'int':
+                    self.GLOBAL_MEMORY[var_name] = int(self.GLOBAL_MEMORY[var_name])
+            elif operator == INT_DIV_EQUALS:
+                self.GLOBAL_MEMORY[var_name] //= var_assign_value
+                if type_symbol == 'float':
+                    self.GLOBAL_MEMORY[var_name] = float(self.GLOBAL_MEMORY[var_name])
+            elif operator == MOD_EQUALS:
+                self.GLOBAL_MEMORY[var_name] %= var_assign_value
+            elif operator == EXP_EQUALS:
+                self.GLOBAL_MEMORY[var_name] **= var_assign_value
+            elif operator == BIT_AND_EQUALS:
+                self.GLOBAL_MEMORY[var_name] &= var_assign_value
+            elif operator == BIT_OR_EQUALS:
+                self.GLOBAL_MEMORY[var_name] |= var_assign_value
+            elif operator == BIT_XOR_EQUALS:
+                self.GLOBAL_MEMORY[var_name] ^= var_assign_value
+            elif operator == BIT_LEFT_SHIFT_EQUALS:
+                self.GLOBAL_MEMORY[var_name] <<= var_assign_value
+            elif operator == BIT_RIGHT_SHIFT_EQUALS:
+                self.GLOBAL_MEMORY[var_name] >>= var_assign_value
+
 
     def visit_Var(self, node):
         """
@@ -488,10 +545,9 @@ class Interpreter(NodeVisitor):
             The value of the variable
         """
         var_name = node.value
+        if var_name not in self.GLOBAL_MEMORY:
+            raise NameError(f"name {repr(var_name)} is not defined")
         val = self.GLOBAL_MEMORY.get(var_name)
-        var_type = self.symtable.lookup(var_name)
-        if var_type is None:
-            raise NameError(repr(var_name))
         return val
 
     def interpret(self):

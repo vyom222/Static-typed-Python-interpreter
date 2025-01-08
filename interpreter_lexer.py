@@ -216,38 +216,68 @@ class Lexer:
                 return self.string("'")
             if self.current_char == '+':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(PLUS_EQUALS, '+=')
                 return Token(PLUS, '+')
             if self.current_char == '-':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(MINUS_EQUALS, '-=')
                 return Token(MINUS, '-')
             if self.current_char == '*':
                 if self.peek() == '*':
                     self.advance()
                     self.advance()
+                    if self.current_char == '=':
+                        self.advance()
+                        return Token(EXP_EQUALS, '**=')
                     return Token(EXP, '**')
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(MUL_EQUALS, '*=')
                 return Token(MUL, '*')
             if self.current_char == '/':
                 if self.peek() == '/':
                     self.advance()
                     self.advance()
+                    if self.current_char == '=':
+                        self.advance()
+                        return Token(INT_DIV_EQUALS, '//=')
                     return Token(INT_DIV, '//')
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(FLOAT_DIV_EQUALS, '/=')
                 return Token(FLOAT_DIV, '/')
             if self.current_char == '~':
                 self.advance()
                 return Token(BIT_NOT, '~')
             if self.current_char == '^':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(BIT_XOR_EQUALS, '^=')
                 return Token(BIT_XOR, '^')
             if self.current_char == '&':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(BIT_AND_EQUALS, '&=')
                 return Token(BIT_AND, '&')
             if self.current_char == '|':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(BIT_OR_EQUALS, '|=')
                 return Token(BIT_OR, '|')
             if self.current_char == '%':
                 self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    return Token(MOD_EQUALS, '%=')
                 return Token(MOD, '%')
             if self.current_char == '(':
                 self.advance()

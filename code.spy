@@ -1,5 +1,6 @@
 # this is a comment
 a: var = 123128f
+a += 10
 b: int = 5
 c: float = a + b / 5 * 10
 d: float = a // c
