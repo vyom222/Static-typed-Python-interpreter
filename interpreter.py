@@ -528,6 +528,8 @@ class Interpreter(NodeVisitor):
                 self.GLOBAL_MEMORY[var_name] <<= var_assign_value
             elif operator == BIT_RIGHT_SHIFT_EQUALS:
                 self.GLOBAL_MEMORY[var_name] >>= var_assign_value
+        else:
+            raise SyntaxError(f"Unexpected type declaration '{type_symbol}'")
 
 
     def visit_Var(self, node):
