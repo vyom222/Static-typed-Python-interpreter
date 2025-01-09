@@ -42,7 +42,7 @@ class Lexer:
         Exception
             An exception indicating a syntax error
         """
-        raise Exception(f"SyntaxError: invalid character '{character}' (U+{hex(ord(character))[2:].upper()})")
+        raise SyntaxError(f"invalid character '{character}' (U+{hex(ord(character))[2:].upper()})")
 
     def advance(self):
         """

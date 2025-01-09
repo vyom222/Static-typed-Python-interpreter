@@ -78,7 +78,7 @@ class Parser:
         VarDeclaration
             The variable declaration node
         """
-        var_node = Var(self.current_token)  # first ID
+        var_node = Var(self.current_token) # first ID
         self.eat(ID)
         if self.current_token.type in (ASSIGN, *self.compound_assign):
             type_node = Type(Token(NONETYPE, None))
