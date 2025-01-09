@@ -38,7 +38,7 @@ class Parser:
         Exception
             An exception indicating a syntax error
         """
-        raise Exception('SyntaxError: invalid syntax')
+        raise SyntaxError('invalid syntax')
 
     def eat(self, token_type: str):
         """

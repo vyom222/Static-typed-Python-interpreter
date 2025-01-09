@@ -3,9 +3,9 @@
 
 #### How to run:
 ```bash
-python main.py filename.spy args
+python main.py *filename.spy *args
 ```
-- filename.spy: The file to interpret
+- filename.spy: The file to interpret, enter CLI mode if empty
 - args: The arguments to pass to the file | -d: Debug Mode
 
 #### Syntax:
