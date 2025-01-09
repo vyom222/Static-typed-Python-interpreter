@@ -46,7 +46,7 @@ def run_cli(debug):
             line = input(">>> ")
             if line.strip().lower() == 'exit()':
                 print("Process finished with exit code 0")
-                break
+                sys.exit(0)
 
             if not interpreter:
                 interpreter = Interpreter(Parser(Lexer(line)))
