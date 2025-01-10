@@ -27,6 +27,44 @@ class Lexer:
         self.text = text
         self.pos = 0
         self.current_char = self.text[self.pos]
+        self.operators = {'+': Token(PLUS, '+'),
+                          '-': Token(MINUS, '-'),
+                          '*': Token(MUL, '*'),
+                          '/': Token(FLOAT_DIV, '/'),
+                          '%': Token(MOD, '%'),
+                          '^': Token(BIT_XOR, '^'),
+                          '&': Token(BIT_AND, '&'),
+                          '|': Token(BIT_OR, '|'),
+                          '~': Token(BIT_NOT, '~'),
+                          '>': Token(GREATER, '>'),
+                          '<': Token(SMALLER, '<'),
+                          '=': Token(ASSIGN, '='),
+                          '!': Token(NOT, '!'),
+                          '(': Token(LPAREN, '('),
+                          ')': Token(RPAREN, ')'),
+                          ';': Token(SEMI, ';'),
+                          '\n': Token(NEWLINE, '\n'),
+                          ':': Token(COLON, ':'),
+                          ',': Token(COMMA, ','),
+                          '**': Token(EXP, '**'),
+                          '//': Token(INT_DIV, '//'),
+                          '<<': Token(BIT_LEFT_SHIFT, '<<'),
+                          '>>': Token(BIT_RIGHT_SHIFT, '>>'),
+                          '==': Token(EQUALS_TO, '=='),
+                          '!=': Token(NOT_EQUALS_TO, '!='),
+                          '+=': Token(PLUS_EQUALS, '+='),
+                          '-=': Token(MINUS_EQUALS, '-='),
+                          '*=': Token(MUL_EQUALS, '*='),
+                          '/=': Token(FLOAT_DIV_EQUALS, '/='),
+                          '%=': Token(MOD_EQUALS, '%='),
+                          '^=': Token(BIT_XOR_EQUALS, '^='),
+                          '&=': Token(BIT_AND_EQUALS, '&='),
+                          '|=': Token(BIT_OR_EQUALS, '|='),
+                          '<<=': Token(BIT_LEFT_SHIFT_EQUALS, '<<='),
+                          '>>=': Token(BIT_RIGHT_SHIFT_EQUALS, '>>='),
+                          '**=': Token(EXP_EQUALS, '**='),
+                          '>=': Token(GREATER_OR_EQUALS, '>='),
+                          '<=': Token(SMALLER_OR_EQUALS, '<=')}
 
     def error(self, character: str):
         """
@@ -289,6 +327,9 @@ class Lexer:
                 if self.peek() == '>':
                     self.advance()
                     self.advance()
+                    if self.current_char == '=':
+                        self.advance()
+                        return Token(BIT_RIGHT_SHIFT_EQUALS, '>>=')
                     return Token(BIT_RIGHT_SHIFT, '>>')
                 elif self.peek() == '=':
                     self.advance()
@@ -300,6 +341,9 @@ class Lexer:
                 if self.peek() == '<':
                     self.advance()
                     self.advance()
+                    if self.current_char == '=':
+                        self.advance()
+                        return Token(BIT_LEFT_SHIFT_EQUALS, '<<=')
                     return Token(BIT_LEFT_SHIFT, '<<')
                 elif self.peek() == '=':
                     self.advance()

@@ -17,8 +17,8 @@ a: int = 10
 b: str = "Hello World"
 c: float = 10.5f
 d: bool = True
-e: NoneType = None
 f: var = 5
+g: int
 
 # Expressions
 10 + 5 * (6 / 2) % 3 ** 5 // 9 - 1

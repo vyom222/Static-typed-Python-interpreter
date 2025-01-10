@@ -80,6 +80,7 @@ class Parser:
         """
         var_node = Var(self.current_token) # first ID
         self.eat(ID)
+
         if self.current_token.type in (ASSIGN, *self.compound_assign):
             type_node = Type(Token(NONETYPE, None))
             var_declarations = VarDeclaration(var_node, type_node)
@@ -108,8 +109,6 @@ class Parser:
             self.eat(STR)
         elif self.current_token.type == "BOOL":
             self.eat(BOOL)
-        elif self.current_token.type == "NONETYPE":
-            self.eat(NONETYPE)
         elif self.current_token.type == "VAR":
             self.eat(VAR)
         node = Type(token)
@@ -206,6 +205,9 @@ class Parser:
             self.eat(token.type)
             right = self.logical_or()
             node = CompoundAssign(left, token, right)
+            return node
+        if self.current_token.type == EOF:
+            node = Assign(left, token, NoneType(Token(NONETYPE, None)))
             return node
         self.eat(ASSIGN)
         right = self.logical_or()

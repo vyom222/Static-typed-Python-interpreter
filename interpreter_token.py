@@ -146,7 +146,6 @@ RESERVED_KEYWORDS = {
     'var': Token(VAR, 'var'),
     'str': Token(STR, 'str'),
     'bool': Token(BOOL, 'bool'),
-    'NoneType': Token(NONETYPE, 'NoneType'),
     'True': Token(BOOLEAN_CONST, 'True'),
     'False': Token(BOOLEAN_CONST, 'False'),
     'None': Token(NONETYPE_CONSTANT, 'None')

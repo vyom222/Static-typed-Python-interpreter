@@ -185,7 +185,6 @@ class SymbolTable:
         self.define(BuiltinTypeSymbol('float'))
         self.define(BuiltinTypeSymbol('str'))
         self.define(BuiltinTypeSymbol('bool'))
-        self.define(BuiltinTypeSymbol('NoneType'))
 
     def define(self, symbol):
         """
@@ -463,18 +462,20 @@ class Interpreter(NodeVisitor):
         var_name = node.left.var_node.value
         type_symbol = node.left.type_node.value
         var_value = self.visit(node.right)
-        if type_symbol is None:
-            type_symbol = self.symtable.lookup(var_name).type
-        var_type = type(var_value).__name__
-        if type_symbol == 'var':
-            type_symbol = var_type
-        elif (var_type, type_symbol) == ('int', 'float'):
-            var_value = float(var_value)
-            var_type = 'float'
-        if var_type != type_symbol:
-            raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
-        var_type = VarSymbol(var_name, type_symbol)
-        self.symtable.define(var_type)
+        if var_value is not None:
+            if type_symbol is None:
+                type_symbol = self.symtable.lookup(var_name).type
+            var_type = type(var_value).__name__
+            if type_symbol == 'var':
+                type_symbol = var_type
+            elif (var_type, type_symbol) == ('int', 'float'):
+                var_value = float(var_value)
+                var_type = 'float'
+            if var_type != type_symbol:
+                raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
+        if var_value is None and type_symbol == 'var':
+            raise SyntaxError(f"Implicitly-typed variable '{var_name}' must be initialized")
+        self.symtable.define(VarSymbol(var_name, type_symbol))
         self.GLOBAL_MEMORY[var_name] = var_value
 
     def visit_CompoundAssign(self, node):
@@ -495,11 +496,14 @@ class Interpreter(NodeVisitor):
             var_assign_value = self.visit(node.right)
             var_type = type(var_assign_value).__name__
             type_symbol = self.symtable.lookup(var_name).type
-            if (var_type, type_symbol) == ('int', 'float'):
-                var_assign_value = float(var_assign_value)
-                var_type = 'float'
-            if type_symbol != var_type:
-                raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
+            if var_assign_value is not None:
+                if (var_type, type_symbol) == ('int', 'float'):
+                    var_assign_value = float(var_assign_value)
+                    var_type = 'float'
+                if type_symbol != var_type:
+                    raise TypeError(f"Cannot assign {var_type} to {type_symbol}")
+            if self.GLOBAL_MEMORY[var_name] is None:
+                raise SyntaxError(f"Use of unassigned variable '{var_name}'")
             if operator == PLUS_EQUALS:
                 self.GLOBAL_MEMORY[var_name] += var_assign_value
             elif operator == MINUS_EQUALS:
