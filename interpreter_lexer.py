@@ -89,7 +89,7 @@ class Lexer:
         self.pos += 1
         self.current_char = self.text[self.pos] if self.pos < len(self.text) else None
 
-    def peek(self):
+    def peek(self, n=1):
         """
         Peeks at the next character in the input text without advancing the `pos` pointer.
 
@@ -98,7 +98,7 @@ class Lexer:
         str
             The next character in the input text
         """
-        peek_pos = self.pos + 1
+        peek_pos = self.pos + n
         if peek_pos > len(self.text) - 1:
             return None
         else:
@@ -246,134 +246,26 @@ class Lexer:
                 continue
             if self.current_char.isdigit():
                 return self.number()
-            if self.current_char == '"':
+            if self.current_char == '"' or self.current_char == "'":
                 self.advance()
-                return self.string('"')
-            if self.current_char == "'":
-                self.advance()
-                return self.string("'")
-            if self.current_char == '+':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(PLUS_EQUALS, '+=')
-                return Token(PLUS, '+')
-            if self.current_char == '-':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(MINUS_EQUALS, '-=')
-                return Token(MINUS, '-')
-            if self.current_char == '*':
-                if self.peek() == '*':
-                    self.advance()
-                    self.advance()
-                    if self.current_char == '=':
+                return self.string(self.current_char)
+            if self.current_char in self.operators.keys():
+                op = self.operators.get(self.current_char + self.peek(1) + self.peek(2))
+                if op is None:
+                    op = self.operators.get(self.current_char + self.peek(1))
+                    if op is None:
+                        op = self.operators.get(self.current_char)
+                        if op is None:
+                            self.error(self.current_char)
                         self.advance()
-                        return Token(EXP_EQUALS, '**=')
-                    return Token(EXP, '**')
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(MUL_EQUALS, '*=')
-                return Token(MUL, '*')
-            if self.current_char == '/':
-                if self.peek() == '/':
+                        return op
                     self.advance()
                     self.advance()
-                    if self.current_char == '=':
-                        self.advance()
-                        return Token(INT_DIV_EQUALS, '//=')
-                    return Token(INT_DIV, '//')
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(FLOAT_DIV_EQUALS, '/=')
-                return Token(FLOAT_DIV, '/')
-            if self.current_char == '~':
-                self.advance()
-                return Token(BIT_NOT, '~')
-            if self.current_char == '^':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(BIT_XOR_EQUALS, '^=')
-                return Token(BIT_XOR, '^')
-            if self.current_char == '&':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(BIT_AND_EQUALS, '&=')
-                return Token(BIT_AND, '&')
-            if self.current_char == '|':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(BIT_OR_EQUALS, '|=')
-                return Token(BIT_OR, '|')
-            if self.current_char == '%':
-                self.advance()
-                if self.current_char == '=':
-                    self.advance()
-                    return Token(MOD_EQUALS, '%=')
-                return Token(MOD, '%')
-            if self.current_char == '(':
-                self.advance()
-                return Token(LPAREN, '(')
-            if self.current_char == ')':
-                self.advance()
-                return Token(RPAREN, ')')
-            if self.current_char == '>':
-                if self.peek() == '>':
-                    self.advance()
-                    self.advance()
-                    if self.current_char == '=':
-                        self.advance()
-                        return Token(BIT_RIGHT_SHIFT_EQUALS, '>>=')
-                    return Token(BIT_RIGHT_SHIFT, '>>')
-                elif self.peek() == '=':
-                    self.advance()
-                    self.advance()
-                    return Token(GREATER_OR_EQUALS, '>=')
-                self.advance()
-                return Token(GREATER, '>')
-            if self.current_char == '<':
-                if self.peek() == '<':
-                    self.advance()
-                    self.advance()
-                    if self.current_char == '=':
-                        self.advance()
-                        return Token(BIT_LEFT_SHIFT_EQUALS, '<<=')
-                    return Token(BIT_LEFT_SHIFT, '<<')
-                elif self.peek() == '=':
-                    self.advance()
-                    self.advance()
-                    return Token(SMALLER_OR_EQUALS, '<=')
-                self.advance()
-                return Token(SMALLER, '<')
-            if self.current_char == '=':
-                if self.peek() == '=':
-                    self.advance()
-                    self.advance()
-                    return Token(EQUALS_TO, '==')
-                self.advance()
-                return Token(ASSIGN, '=')
-            if self.current_char == '!' and self.peek() == '=':
+                    return op
                 self.advance()
                 self.advance()
-                return Token(NOT_EQUALS_TO, '!=')
-            if self.current_char == ';':
                 self.advance()
-                return Token(SEMI, ';')
-            if self.current_char == '\n':
-                self.advance()
-                return Token(NEWLINE, '\n')
-            if self.current_char == ':':
-                self.advance()
-                return Token(COLON, ':')
-            if self.current_char == ',':
-                self.advance()
-                return Token(COMMA, ',')
+                return op
             if self.current_char.isalpha():
                 return self._id()
             self.error(self.current_char)

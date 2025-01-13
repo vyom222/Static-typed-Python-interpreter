@@ -173,7 +173,7 @@ class SymbolTable:
         str
             A string representation of the symbol table
         """
-        return 'Symbols: \n' + '\n'.join(f"<'{i}' {j}>" for i, j in self._symbols.items())
+        return '\n'.join(f"<'{i}' {j}>" for i, j in self._symbols.items())
 
     __repr__ = __str__
 

@@ -56,8 +56,8 @@ def run_cli(debug):
             interpreter.interpret()
 
             if debug:
-                print(f"GLOBAL MEMORY: {interpreter.GLOBAL_MEMORY}")
-                print(f"SYMBOL TABLE: {interpreter.symtable}")
+                print(f"GLOBAL MEMORY:\n{interpreter.GLOBAL_MEMORY}")
+                print(f"SYMBOL TABLE:\na{interpreter.symtable}")
         except KeyboardInterrupt:
             print("\033[31mKeyboardInterrupt\033[0m")
         except Exception as e:
